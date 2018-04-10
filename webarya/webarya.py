@@ -2,7 +2,32 @@
 from flask import Flask, render_template, request
 from wtforms import Form, TextAreaField
 from flask.ext.bootstrap import Bootstrap
-import arya.arya
+# Why do we have to do this? Well, the arya pacakge installs a binary into
+# /usr/local/bin/arya.py
+#
+# Furthermore, in our docker container, sys.path evaluates to:
+#
+# ['',
+#  '/usr/local/bin',
+#  '/usr/local/lib/python27.zip',
+#  '/usr/local/lib/python2.7',
+#  '/usr/local/lib/python2.7/plat-linux2',
+#  '/usr/local/lib/python2.7/lib-tk',
+#  '/usr/local/lib/python2.7/lib-old',
+#  '/usr/local/lib/python2.7/lib-dynload',
+#  '/usr/local/lib/python2.7/site-packages',
+#  '/usr/local/lib/python2.7/site-packages/IPython/extensions',
+#  '/root/.ipython']
+#
+# Which means, when you do import 'arya'. You are getting the binary and the
+# functions it defines in /usr/local/bin/arya.py.
+#
+# However, if you do import arya.arya as realarya, we can get python to keep
+# looking until it finds our desired module,
+# https://github.com/datacenter/arya/blob/master/arya/arya.py. and then lets
+# us import as realarya to avoid any confusion.
+#
+import arya.arya as realarya
 from argparse import ArgumentParser
 import socket
 
@@ -23,8 +48,8 @@ def post_action(string):
     :param string: string of xml or json data
     :return: string of cobra python code
     """
-    fmt = arya.arya.isxmlorjson(string)
-    wa = arya.arya.arya()
+    fmt = realarya.isxmlorjson(string)
+    wa = realarya.arya()
 
     if fmt == 'xml':
         return wa.getpython(xmlstr=string)
